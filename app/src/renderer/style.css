@@ -174,13 +174,6 @@ body {
   display: none;
 }
 
-.bubble-line.is-sub {
-  max-width: 100%;
-  font-size: clamp(8px, 3.2vmin, 14px);
-  font-weight: 500;
-  color: var(--ink-soft);
-}
-
 /* State colours: the bubble's outline carries the agent status. Thinking and
    working share the same blue — both mean "the agent is busy, do not interrupt". */
 .stage[data-state="idle"] {

@@ -79,7 +79,7 @@ app.whenReady().then(async () => {
     win.webContents.send('pet:state', fixture());
     await new Promise((resolve) => setTimeout(resolve, 900));
     const seen = await win.webContents.executeJavaScript(
-      "document.getElementById('bubble-line-1').textContent + ' | ' + document.getElementById('bubble-line-2').textContent + ' | ' + document.getElementById('stage').dataset.state + ' | ink=' + getComputedStyle(document.querySelector('.bubble-ink')).stroke",
+      "document.getElementById('bubble-line-1').textContent + ' | ' + document.getElementById('stage').dataset.state + ' | ink=' + getComputedStyle(document.querySelector('.bubble-ink')).stroke",
     );
     const image = await win.capturePage();
     const file = path.join(outDir, `render-${state}.png`);

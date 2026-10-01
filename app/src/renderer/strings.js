@@ -3,8 +3,8 @@
 /**
  * Bilingual copy for the pet speech bubble.
  *
- * The first line is the status headline; the second line carries the optional
- * detail such as the waiting reason or the last error.
+ * One headline per state, matched by the state name the main process sends. The
+ * bubble shows nothing else: a failure's text stays in the log.
  */
 window.PET_STRINGS = {
   zh: {
