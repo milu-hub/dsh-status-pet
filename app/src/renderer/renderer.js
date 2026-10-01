@@ -9,7 +9,6 @@
   const stage = document.getElementById('stage');
   const bubble = document.getElementById('bubble');
   const line1 = document.getElementById('bubble-line-1');
-  const line2 = document.getElementById('bubble-line-2');
   const pet = document.getElementById('pet');
   const petImage = document.getElementById('pet-image');
 
@@ -59,13 +58,6 @@
     return table[state] || table.idle;
   }
 
-  /** Short, single-line version of a failure message for the bubble. */
-  function shortError(message) {
-    if (typeof message !== 'string' || message.length === 0) return '';
-    const firstLine = message.split('\n')[0].trim();
-    return firstLine.length > 20 ? `${firstLine.slice(0, 19)}...` : firstLine;
-  }
-
   function render() {
     const size = Number(settings.petSize) || 420;
     const box = stageSize(size);
@@ -86,7 +78,6 @@
 
     const copy = text(status.state);
     line1.textContent = copy.line1;
-    line2.textContent = detail || '';
 
     bubble.hidden = settings.bubbleVisible !== true;
     pet.classList.toggle('is-hidden', settings.petVisible !== true);
