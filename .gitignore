@@ -1,0 +1,39 @@
+# Dependencies ------------------------------------------------------------
+# 依赖目录体积巨大（Electron 解包后约 275 MB），用 pnpm install 还原即可
+node_modules/
+
+# Verification output -----------------------------------------------------
+# 验证脚本的截图/临时产物，tools 里的脚本会自行重建
+.shots/
+
+# Synthesis scratch -------------------------------------------------------
+# make_squeak_variants.py 写出的试听候选，定稿的只有 app/assets/squeak.wav
+app/assets/squeak-candidates/
+
+# Python bytecode ---------------------------------------------------------
+# tools 下的 .py 跑一次就会生成
+__pycache__/
+*.pyc
+
+# Logs and OS cruft -------------------------------------------------------
+*.log
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editors and tooling -----------------------------------------------------
+.vscode/
+.idea/
+*.swp
+*~
+
+# Build artifacts ---------------------------------------------------------
+# electron-builder / 打包输出（启动桌宠.cmd 与 重启桌宠.cmd 是源码，
+# 扩展名是 .cmd，不会被 *.exe / dist / out 规则命中）
+dist/
+out/
+release/
+*.dmg
+*.AppImage

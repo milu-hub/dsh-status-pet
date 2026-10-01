@@ -1,0 +1,20 @@
+# Normalise line endings in the repository to LF, whatever the contributor's
+# core.autocrlf happens to be.
+#
+# Without this, a Windows checkout with core.autocrlf=true (the Git for Windows
+# default) turns every file into CRLF, which is wrong for the sibling .cmd and
+# .ps1 launchers in particular: cmd.exe and powershell.exe want either LF or
+# CRLF consistently, and mixed endings are the combination that actually breaks
+# them. `eol=lf` here overrides autocrlf, so every clone gets byte-identical
+# files and the diffs stay clean.
+* text=auto eol=lf
+
+# Binary assets: never touch these, and keep GitHub from guessing.
+*.png binary
+*.ico binary
+*.wav binary
+
+# Windows launchers read in the console code page, so they are deliberately
+# ASCII-only; declaring them text keeps the LF normalisation above.
+*.cmd text
+*.ps1 text

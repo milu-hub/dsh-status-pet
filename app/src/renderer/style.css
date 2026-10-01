@@ -1,0 +1,427 @@
+/*
+ * DSH Status Pet — desktop overlay styling.
+ *
+ * The window is square: the pet is anchored to one bottom corner and the speech
+ * bubble sits diagonally opposite it, in the transparent pocket the artwork
+ * leaves there. One custom property, --pet-size, drives every dimension so the
+ * size setting scales the whole widget coherently.
+ *
+ * The widget comes in two poses, and the renderer picks between them from the
+ * `mirrored` flag the main process sends:
+ *
+ *   .stage.is-right  pet bottom-right, bubble top-left,  tail pointing right
+ *   .stage.is-left   pet bottom-left,  bubble top-right, tail pointing left
+ *
+ * The left pose is the exact reflection of the right one, so the composition is
+ * identical and only the direction the pet faces changes.
+ */
+
+:root {
+  /* Placeholders only: renderer.js overwrites these from the petSize setting
+     (1.2 x 0.5 of --pet-size for the bubble, 1.35 for the window width). */
+  --pet-size: 280px;
+  --stage-width: 378px;
+  --stage-height: 280px;
+  /* 1 upright, -1 for the mirrored pose. Every keyframe that touches a
+     transform writes `scaleX(var(--flip, 1))`, so flipping the whole widget is
+     just this one variable: no duplicate keyframes, and the entry/idle motion
+     keeps working in both poses. renderer.js sets it on <html>. */
+  --flip: 1;
+  --ink: #1d2b4d;
+  --ink-soft: #4a5c86;
+  --cloud: #f6f9ff;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: default;
+  font-family: "Segoe UI Variable", "Segoe UI", "Microsoft YaHei UI", "PingFang SC", system-ui, sans-serif;
+}
+
+.stage {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* ---------------------------------------------------------------- bubble -- */
+
+/* The bubble sits above the pet's head, in the transparent pocket the asset
+   leaves there, and touches no drawn pixel of the artwork.
+
+   The numbers are the artwork's, not a guess. The pocket runs from the widget's
+   inner edge out to about 0.68 of --pet-size, and its floor — the highest drawn
+   pixel of the hair anywhere under the bubble — sits at about 0.30. A bubble
+   0.06 from the top can therefore be 0.66 wide and 0.27 tall and still clear
+   the head, which is exactly what README.md's geometry table records.
+   `tools/pocket-probe.js` sweeps that envelope straight from the alpha channel,
+   and `tools/check-layout.js` fails if a later change grows the bubble past it.
+
+   The bubble's geometry never changes between the two poses — only the edge it
+   hangs from does, which is what makes the left pose the mirror image of the
+   right one.
+
+   The flip turns about the bubble's centre. That is deliberately *not* the
+   tail: the box is anchored to the widget's outer edge, so turning about the
+   tail would swing the bubble's body out of the window. About the centre the
+   box stays where it is, the oval lands where the right pose's oval is, and the
+   tail swaps to the pet's side, which is the whole point of the flip. */
+.bubble {
+  position: absolute;
+  top: calc(var(--pet-size) * 0.1);
+  width: calc(var(--pet-size) * 1.20);
+  height: calc(var(--pet-size) * 0.40);
+  pointer-events: auto;
+  cursor: pointer;
+  transform-origin: 50% 50%;
+  animation: bubble-in 340ms cubic-bezier(0.22, 1.2, 0.36, 1) both;
+  /* No transition on the pose: `left`/`right` trade places between the two
+     rules, so there is nothing to interpolate — the visible turn is the flip
+     itself, which the keyframes above carry. */
+  transition: opacity 180ms ease;
+}
+
+/* Right pose: pet in the bottom-right corner, so the bubble takes the top-left
+   pocket and its tail points right, at the pet. */
+.stage.is-right .bubble {
+  left: calc(var(--pet-size) * 0.01);
+  right: auto;
+}
+
+/* Left pose: the mirror image — the bubble hangs off the right edge and is
+   flipped, so its tail lands on the pet standing in the bottom-left corner. The
+   text block turns with it, so it is counter-flipped below and still reads left
+   to right. */
+.stage.is-left .bubble {
+  left: auto;
+  right: calc(var(--pet-size) * 0.01);
+  transform: scaleX(-1);
+}
+
+.bubble[hidden] {
+  display: none;
+}
+
+.bubble-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  filter: drop-shadow(0 4px 7px rgba(15, 26, 55, 0.22));
+}
+
+/* The stroked silhouette sits under the fills, so the tail meets the oval
+   without an internal outline. Its colour follows the agent state and switches
+   immediately, so the outline always matches the sentence next to it. */
+.bubble-ink {
+  fill: none;
+  stroke: var(--state-color, #4c7bd9);
+  stroke-width: 4.6;
+  stroke-linejoin: round;
+}
+
+.bubble-fill {
+  fill: var(--cloud);
+}
+
+.bubble-text {
+  position: absolute;
+  left: 13%;
+  right: 13%;
+  top: 14%;
+  bottom: 26%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  overflow: hidden;
+  text-align: center;
+  color: var(--ink);
+  line-height: 1.12;
+}
+
+.bubble-line {
+  display: block;
+  max-width: 100%;
+  font-size: clamp(10px, 9.9vmin, 25px);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+:lang(en) .bubble-line {
+  font-size: clamp(8px, 7.6vmin, 17px);
+}
+
+.bubble-line:empty {
+  display: none;
+}
+
+.bubble-line.is-sub {
+  max-width: 100%;
+  font-size: clamp(8px, 3.2vmin, 14px);
+  font-weight: 500;
+  color: var(--ink-soft);
+}
+
+/* State colours: the bubble's outline carries the agent status. Thinking and
+   working share the same blue — both mean "the agent is busy, do not interrupt". */
+.stage[data-state="idle"] {
+  --state-color: #8a94b8;
+}
+.stage[data-state="thinking"] {
+  --state-color: #3f74e0;
+}
+.stage[data-state="working"] {
+  --state-color: #3f74e0;
+}
+.stage[data-state="waiting"] {
+  --state-color: #e2a03c;
+}
+.stage[data-state="error"] {
+  --state-color: #dc4b4b;
+}
+.stage[data-state="ok"] {
+  --state-color: #23b26d;
+}
+
+/* A soft pulse while the agent is busy. */
+.stage[data-state="thinking"] .bubble,
+.stage[data-state="working"] .bubble {
+  animation: bubble-breathe 1.9s ease-in-out infinite;
+}
+
+.stage[data-state="error"] .bubble {
+  animation: bubble-shake 520ms ease-in-out 1;
+}
+
+/* ------------------------------------------------------------------- pet -- */
+
+/* The pet and the bubble turn as a pair: this transition has to match the
+   bubble's own, or the two halves of the pose drift apart mid-turn. */
+.pet {
+  position: absolute;
+  bottom: 0;
+  width: var(--pet-size);
+  height: var(--pet-size);
+  pointer-events: auto;
+  cursor: pointer;
+  transform-origin: 50% 96%;
+  will-change: transform;
+  transition: left 420ms cubic-bezier(0.22, 0.68, 0.28, 1), right 420ms cubic-bezier(0.22, 0.68, 0.28, 1),
+    transform 420ms cubic-bezier(0.22, 0.68, 0.28, 1);
+}
+
+/* The pet's own box carries the pose flip (see .stage.is-left below), so the
+   image only has to worry about its entry and idle motion. */
+.pet-image {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: auto;
+  height: auto;
+  pointer-events: none;
+  -webkit-user-drag: none;
+  filter: drop-shadow(0 6px 10px rgba(14, 24, 52, 0.28));
+  animation: pet-enter 320ms cubic-bezier(0.22, 1.2, 0.36, 1) both;
+}
+
+/* Right pose: the pet stands in the bottom-right corner facing left, into the
+   screen — the artwork's own direction, so nothing is flipped. */
+.stage.is-right .pet {
+  right: 0;
+  left: auto;
+  transform: scaleX(1);
+}
+
+/* Left pose: the pet stands in the bottom-left corner and is flipped to face
+   right, into the screen. Because the flip lives on the box rather than on the
+   image, the press-squash, the hover lift and the idle bob all inherit it, and
+   one transition covers the whole turn. */
+.stage.is-left .pet {
+  right: auto;
+  left: 0;
+  transform: scaleX(-1);
+}
+
+/* The bubble is flipped along with the pet, so its text would come out
+   back-to-front: the text block is counter-flipped on its own and always reads
+   left to right. */
+.stage.is-left .bubble-text {
+  transform: scaleX(-1);
+}
+
+.pet-shadow {
+  position: absolute;
+  left: 22%;
+  right: 16%;
+  bottom: 1%;
+  height: 5%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(12, 20, 44, 0.34), rgba(12, 20, 44, 0));
+  transform-origin: 50% 50%;
+  transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1), opacity 220ms ease;
+  pointer-events: none;
+}
+
+/* The press interaction: squash down, then spring back with a tiny bounce. */
+.pet.is-pressed {
+  animation: pet-squash 560ms cubic-bezier(0.2, 0.9, 0.24, 1.18) both;
+}
+
+.pet.is-pressed .pet-shadow {
+  transform: scale(1.12, 0.7);
+  opacity: 0.72;
+}
+
+.pet.is-pressed .pet-image {
+  filter: drop-shadow(0 2px 5px rgba(14, 24, 52, 0.3)) saturate(1.06);
+  animation: pet-enter 320ms cubic-bezier(0.22, 1.2, 0.36, 1) both;
+}
+
+.pet:hover .pet-image {
+  filter: drop-shadow(0 8px 14px rgba(14, 24, 52, 0.34)) brightness(1.03);
+}
+
+.pet.is-hidden,
+.bubble.is-hidden {
+  display: none;
+}
+
+/* Idle life: a slow breathing bob so the pet never looks frozen. The entry
+   animation always leads, then the per-state loop takes over. These rules have
+   to stay last in the file: they are what beats the plain `transform` the pose
+   rules set, so no pose twin may be declared after them. The pose itself lives
+   on .pet, one level up, so it survives every animation listed here. */
+.stage[data-state="idle"] .pet-image {
+  animation: pet-enter 320ms cubic-bezier(0.22, 1.2, 0.36, 1) both, pet-idle 5.2s ease-in-out 320ms infinite;
+}
+
+.stage[data-state="waiting"] .pet-image {
+  animation: pet-enter 320ms cubic-bezier(0.22, 1.2, 0.36, 1) both, pet-wait 1.1s ease-in-out 320ms infinite;
+}
+
+/* The squash runs on .pet and needs the pose flip folded in for the same reason
+   the bubble's keyframes do: it overwrites the pose transform while it plays,
+   so without `scaleX(var(--flip, 1))` the pet would snap upright for the 560ms
+   bounce, and the squash would stretch the wrong way on the lifted half. */
+@keyframes pet-squash {
+  0% {
+    transform: scaleX(var(--flip, 1)) scale(1, 1);
+  }
+  22% {
+    transform: scaleX(var(--flip, 1)) scale(1.1, 0.76) translateY(4%);
+  }
+  46% {
+    transform: scaleX(var(--flip, 1)) scale(0.95, 1.08) translateY(-2%);
+  }
+  68% {
+    transform: scaleX(var(--flip, 1)) scale(1.03, 0.97);
+  }
+  84% {
+    transform: scaleX(var(--flip, 1)) scale(0.99, 1.01);
+  }
+  100% {
+    transform: scaleX(var(--flip, 1)) scale(1, 1);
+  }
+}
+
+@keyframes pet-idle {
+  0%,
+  100% {
+    transform: translateY(0) scale(1, 1);
+  }
+  50% {
+    transform: translateY(-1.2%) scale(1.01, 0.99);
+  }
+}
+
+@keyframes pet-wait {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-0.6deg);
+  }
+  50% {
+    transform: translateY(-1.6%) rotate(0.6deg);
+  }
+}
+
+/* Every bubble keyframe folds `scaleX(var(--flip, 1))` in, so an animating
+   bubble is still a flipped bubble: without it the bubble would snap upright
+   the moment the agent started thinking. Listing the flip first also keeps the
+   breathing and the shake centred — they scale and slide the content inside the
+   flipped box instead of fighting it. */
+@keyframes bubble-in {
+  0% {
+    opacity: 0;
+    transform: scaleX(var(--flip, 1)) scale(0.7);
+  }
+  100% {
+    opacity: 1;
+    transform: scaleX(var(--flip, 1)) scale(1);
+  }
+}
+
+@keyframes pet-enter {
+  0% {
+    opacity: 0;
+    transform: translateY(4%) scale(0.94);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes bubble-breathe {
+  0%,
+  100% {
+    transform: scaleX(var(--flip, 1)) scale(1);
+  }
+  50% {
+    transform: scaleX(var(--flip, 1)) scale(1.035);
+  }
+}
+
+@keyframes bubble-shake {
+  0%,
+  100% {
+    transform: scaleX(var(--flip, 1)) translateX(0);
+  }
+  20% {
+    transform: scaleX(var(--flip, 1)) translateX(-4%);
+  }
+  45% {
+    transform: scaleX(var(--flip, 1)) translateX(3.5%);
+  }
+  70% {
+    transform: scaleX(var(--flip, 1)) translateX(-2%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bubble,
+  .pet,
+  .pet-image,
+  .pet-shadow {
+    animation: none !important;
+    transition: none !important;
+  }
+}

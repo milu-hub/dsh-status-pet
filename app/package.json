@@ -1,0 +1,19 @@
+{
+  "name": "dsh-status-pet",
+  "productName": "DSH Status Pet",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A desktop pet that shows the live DeepSeek Harness agent status in a speech bubble.",
+  "main": "src/main/main.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --enable-logging"
+  },
+  "devDependencies": {
+    "electron": "^33.2.0"
+  },
+  "dependencies": {
+    "fzstd": "^0.1.1"
+  }
+}

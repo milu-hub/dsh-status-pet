@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="zh">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self' pet-asset: data: blob:; style-src 'self'; script-src 'self'; connect-src pet-asset:; media-src pet-asset:;" />
+    <title>DSH Status Pet</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div id="stage" class="stage">
+      <div id="bubble" class="bubble">
+        <svg class="bubble-svg" viewBox="0 0 200 120" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+          <!-- Two passes: the first strokes the combined silhouette so the tail
+               joins the oval without a seam, the second fills over the joint.
+               The tail is a narrow isosceles triangle whose base sits on the
+               ellipse, which reads as a speech-bubble spike. -->
+          <g class="bubble-ink">
+            <ellipse cx="95" cy="46" rx="80" ry="45" />
+            <path d="M150 58L138 82L186 95Z" />
+          </g>
+          <g class="bubble-fill">
+            <ellipse cx="95" cy="46" rx="80" ry="45" />
+            <path d="M150 58L138 82L186 95Z" />
+          </g>
+        </svg>
+        <div class="bubble-text">
+          <span id="bubble-line-1" class="bubble-line"></span>
+          <span id="bubble-line-2" class="bubble-line"></span>
+        </div>
+      </div>
+
+      <div id="pet" class="pet" role="button" tabindex="0" aria-label="DSH status pet">
+        <div class="pet-shadow"></div>
+        <img id="pet-image" class="pet-image" src="pet-asset://local/pet.png" alt="" draggable="false" />
+      </div>
+    </div>
+
+    <script src="strings.js"></script>
+    <script src="sound.js"></script>
+    <script src="renderer.js"></script>
+  </body>
+</html>
